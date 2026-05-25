@@ -1,15 +1,31 @@
-- name: Habilitar el módulo de Node.js 24
-  command: dnf module enable nodejs:24 -y
-  register: node_module
-  changed_when: "'Enabling module' in node_module.stdout"
-
 - name: Instalar paquetes básicos para JS
   dnf:
     name:
       - git
       - curl
-      - nodejs
+      - libatomic
+      - unzip
     state: present
+
+- name: Instalar NVM para el usuario {{ usuario_nombre }}
+  shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  become: yes
+  become_user: "{{ usuario_nombre }}"
+  args:
+    creates: "/home/{{ usuario_nombre }}/.nvm/nvm.sh"
+
+- name: Instalar Node.js 24 via NVM para el usuario {{ usuario_nombre }}
+  shell: |
+    . "$HOME/.nvm/nvm.sh"
+    nvm install 24
+  become: yes
+  become_user: "{{ usuario_nombre }}"
+  environment:
+    HOME: "/home/{{ usuario_nombre }}"
+    NVM_DIR: "/home/{{ usuario_nombre }}/.nvm"
+  args:
+    executable: /bin/bash
+    creates: "/home/{{ usuario_nombre }}/.nvm/versions/node/v24.16.0/bin/node"
 
 - name: Instalar PNPM para el usuario {{ usuario_nombre }}
   shell: curl -fsSL https://get.pnpm.io/install.sh | SHELL=bash sh -

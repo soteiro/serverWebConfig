@@ -1,14 +1,36 @@
-- name: Desactivar y detener firewalld
+- name: Cargar facts de servicios
+  service_facts:
+
+- name: Desactivar y detener firewalld si existe
   service:
     name: firewalld
     state: stopped
     enabled: false
-  ignore_errors: yes
+  when: "'firewalld.service' in ansible_facts.services"
+
+- name: Instalar dnf-plugins-core
+  dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Habilitar repositorio CRB
+  command: dnf config-manager --set-enabled crb
+  register: crb_enable
+  changed_when: "'enabled' in crb_enable.stdout or 'enabled' in crb_enable.stderr"
+  failed_when: false
+
+- name: Instalar epel-release
+  dnf:
+    name: epel-release
+    state: present
+
+- name: Actualizar cache de DNF
+  dnf:
+    update_cache: yes
 
 - name: Instalar iptables-services y fail2ban
   dnf:
     name:
-      - epel-release
       - iptables-services
       - fail2ban
     state: present
@@ -67,3 +89,6 @@
     - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
     - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
   notify: reiniciar ssh
+
+- name: Aplicar cambios de seguridad inmediatamente
+  meta: flush_handlers
