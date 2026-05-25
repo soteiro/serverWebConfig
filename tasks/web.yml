@@ -1,0 +1,29 @@
+- name: Instalar Nginx y Certbot
+  dnf:
+    name:
+      - nginx
+      - openssl
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Crear directorio para certificados SSL
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+
+- name: Generar certificado SSL autofirmado (Temporal)
+  command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048
+    -keyout /etc/nginx/ssl/server.key
+    -out /etc/nginx/ssl/server.crt
+    -subj "/C=CL/ST=ST/L=Santiago/O=GT/CN={{ ansible_host }}"
+  args:
+    creates: /etc/nginx/ssl/server.crt
+
+- name: Configurar Nginx como Proxy Inverso
+  template:
+    src: templates/nginx_proxy.conf.j2
+    dest: /etc/nginx/conf.d/proxy.conf
+  notify: reiniciar nginx

@@ -1,0 +1,47 @@
+---
+- name: Provisión integral de servidor seguro para Web Apps
+  hosts: "{{ host }}"
+  become: yes
+  vars:
+    usuario_nombre: dsoto
+
+  tasks:
+    - name: Fase 1 - Preparación del Sistema y SWAP
+      include_tasks: tasks/system.yml
+
+    - name: Fase 2 - Configuración de Seguridad y Firewall
+      include_tasks: tasks/security.yml
+
+    - name: Fase 3 - Entorno de Desarrollo (Node/PNPM/Bun)
+      include_tasks: tasks/js_env.yml
+
+    - name: Fase 4 - Servidor Web y Proxy Inverso
+      include_tasks: tasks/web.yml
+
+    - name: Asegurar que todos los servicios estén iniciados
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - iptables
+        - nginx
+        - sshd
+        - fail2ban
+
+  handlers:
+    - name: reiniciar iptables
+      service:
+        name: iptables
+        state: restarted
+
+    - name: reiniciar nginx
+
+      service:
+        name: nginx
+        state: restarted
+
+    - name: reiniciar ssh
+      service:
+        name: sshd
+        state: restarted

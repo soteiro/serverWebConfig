@@ -1,0 +1,69 @@
+- name: Desactivar y detener firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: false
+  ignore_errors: yes
+
+- name: Instalar iptables-services y fail2ban
+  dnf:
+    name:
+      - epel-release
+      - iptables-services
+      - fail2ban
+    state: present
+
+- name: Configurar reglas de iptables desde template
+  template:
+    src: templates/iptables.rules.j2
+    dest: /etc/sysconfig/iptables
+    owner: root
+    group: root
+    mode: '0600'
+  notify: reiniciar iptables
+
+- name: Configurar SELinux para permitir que Nginx actúe como proxy
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+
+- name: Configurar Fail2Ban para SSH
+  ini_file:
+    path: /etc/fail2ban/jail.local
+    section: sshd
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    mode: '0644'
+  loop:
+    - { option: 'enabled', value: 'true' }
+    - { option: 'port', value: '22' }
+    - { option: 'filter', value: 'sshd' }
+    - { option: 'logpath', value: '/var/log/secure' }
+    - { option: 'maxretry', value: '5' }
+    - { option: 'bantime', value: '1h' }
+
+- name: Aplicar hardening de kernel (sysctl)
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+    - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
+    - { name: 'net.ipv4.tcp_max_syn_backlog', value: '2048' }
+    - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+    - { name: 'net.ipv4.conf.all.rp_filter', value: '1' }
+
+- name: Hardening SSH - Solo llaves y desactivar Root
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+  notify: reiniciar ssh

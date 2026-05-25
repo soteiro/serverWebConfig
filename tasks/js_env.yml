@@ -1,0 +1,36 @@
+- name: Habilitar el módulo de Node.js 24
+  command: dnf module enable nodejs:24 -y
+  register: node_module
+  changed_when: "'Enabling module' in node_module.stdout"
+
+- name: Instalar paquetes básicos para JS
+  dnf:
+    name:
+      - git
+      - curl
+      - nodejs
+    state: present
+
+- name: Instalar PNPM para el usuario {{ usuario_nombre }}
+  shell: curl -fsSL https://get.pnpm.io/install.sh | SHELL=bash sh -
+  become: yes
+  become_user: "{{ usuario_nombre }}"
+  args:
+    creates: "/home/{{ usuario_nombre }}/.local/share/pnpm/pnpm"
+
+- name: Instalar Bun para el usuario {{ usuario_nombre }}
+  shell: curl -fsSL https://bun.sh/install | bash
+  become: yes
+  become_user: "{{ usuario_nombre }}"
+  args:
+    creates: "/home/{{ usuario_nombre }}/.bun/bin/bun"
+
+- name: Configurar seguridad JS - Bloquear postinstall en npmrc
+  ini_file:
+    path: "/home/{{ usuario_nombre }}/.npmrc"
+    section: null
+    option: ignore-scripts
+    value: "true"
+    owner: "{{ usuario_nombre }}"
+    group: "{{ usuario_nombre }}"
+    mode: '0600'

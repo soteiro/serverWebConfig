@@ -1,0 +1,64 @@
+- name: Actualizar todos los paquetes del sistema (dnf update)
+  dnf:
+    name: "*"
+    state: latest
+
+- name: Crear el usuario {{ usuario_nombre }}
+  user:
+    name: "{{ usuario_nombre }}"
+    shell: /bin/bash
+    groups: wheel
+    append: yes
+    state: present
+
+- name: Copiar llave pública SSH autorizada
+  authorized_key:
+    user: "{{ usuario_nombre }}"
+    state: present
+    key: "{{ lookup('file', '~/.ssh/melkor.pub') }}"
+
+- name: Asegurar que el grupo wheel tenga permisos de sudo sin contraseña
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    regexp: '^%wheel'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: Verificar si existe el archivo SWAP
+  stat:
+    path: /swapfile
+  register: swap_file_check
+
+- name: Crear archivo SWAP de 2GB
+  command: fallocate -l 2G /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Establecer permisos correctos al SWAP
+  file:
+    path: /swapfile
+    owner: root
+    group: root
+    mode: '0600'
+  when: not swap_file_check.stat.exists
+
+- name: Formatear el archivo como SWAP
+  command: mkswap /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Activar el archivo SWAP
+  command: swapon /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Asegurar que el SWAP sea permanente en /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: '/swapfile swap swap defaults 0 0'
+    state: present
+
+- name: Ajustar swappiness (priorizar RAM)
+  sysctl:
+    name: vm.swappiness
+    value: '10'
+    state: present
+    reload: yes
