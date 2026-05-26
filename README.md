@@ -18,7 +18,6 @@ El proceso se divide en 4 fases automáticas:
 *   **Firewall (Iptables):** Cierra todos los puertos por defecto (**DROP**) y abre solo los esenciales (22, 80, 443).
 *   **SSH Hardening:** Desactiva el acceso al usuario `root` y prohíbe el uso de contraseñas (solo llaves SSH).
 *   **Fail2Ban:** Bloquea automáticamente IPs que intenten atacar el puerto SSH.
-*   **SELinux:** Configurado para permitir que Nginx funcione como proxy hacia tu app.
 *   **Kernel Hardening:** Ajustes de red para prevenir ataques tipo SYN flood y redirecciones maliciosas.
 
 ### 3. Entorno JavaScript Seguro (`tasks/js_env.yml`)
@@ -27,9 +26,8 @@ El proceso se divide en 4 fases automáticas:
 *   **Seguridad JS:** Bloquea globalmente los scripts `postinstall` (`ignore-scripts`), mitigando ataques en la cadena de suministro de paquetes.
 
 ### 4. Servidor Web (`tasks/web.yml`)
-*   **Nginx Proxy:** Configurado para recibir tráfico en el puerto 80/443 y enviarlo a tu app en `localhost:3333`.
-*   **HTTPS:** Redirección automática de HTTP a HTTPS.
-*   **Caché:** Configuración de `max-age` de 1 semana para recursos estáticos.
+*   **Nginx:** Instalación base del servidor web.
+*   **Certificados SSL:** Genera un certificado temporal (autofirmado) en `/etc/nginx/ssl`.
 *   **Let's Encrypt:** Instala Certbot para que puedas generar certificados reales fácilmente.
 
 ---
@@ -64,11 +62,11 @@ Desde la carpeta de este repositorio, corre el siguiente comando reemplazando `[
 ## 📂 Estructura del Proyecto
 *   `provision.yml`: El "director de orquesta".
 *   `tasks/`: Contiene los módulos de configuración por separado.
-*   `templates/`: Archivos de configuración que Ansible "rellena" dinámicamente (como el de Nginx).
+*   `templates/`: Archivos de configuración que Ansible "rellena" dinámicamente (como reglas de iptables).
 
 ## ⚠️ Notas Importantes
 1.  **Certificados SSL:** El playbook genera un certificado temporal (autofirmado) para que Nginx arranque. Una vez que tu dominio apunte al server, corre:
     `sudo certbot --nginx -d tu-dominio.com`
-2.  **Tu App:** Tu aplicación debe escuchar en el puerto **3333** para que Nginx pueda encontrarla.
-3.  **Acceso SSH:** Una vez terminado el proceso, el acceso `root` quedará bloqueado. Deberás entrar como:
+2.  **Acceso SSH:** Una vez terminado el proceso, el acceso `root` quedará bloqueado. Deberás entrar como:
     `ssh dsoto@[IP_DEL_SERVER] -i ~/.ssh/melkor`
+    

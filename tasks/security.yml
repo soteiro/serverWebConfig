@@ -44,12 +44,6 @@
     mode: '0600'
   notify: reiniciar iptables
 
-- name: Configurar SELinux para permitir que Nginx actúe como proxy
-  seboolean:
-    name: httpd_can_network_connect
-    state: yes
-    persistent: yes
-
 - name: Configurar Fail2Ban para SSH
   ini_file:
     path: /etc/fail2ban/jail.local

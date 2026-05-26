@@ -15,7 +15,7 @@
     - name: Fase 3 - Entorno de Desarrollo (Node/PNPM/Bun)
       include_tasks: tasks/js_env.yml
 
-    - name: Fase 4 - Servidor Web y Proxy Inverso
+    - name: Fase 4 - Servidor Web
       include_tasks: tasks/web.yml
 
     - name: Asegurar que todos los servicios estén iniciados

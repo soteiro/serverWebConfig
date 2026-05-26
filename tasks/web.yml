@@ -22,8 +22,3 @@
   args:
     creates: /etc/nginx/ssl/server.crt
 
-- name: Configurar Nginx como Proxy Inverso
-  template:
-    src: templates/nginx_proxy.conf.j2
-    dest: /etc/nginx/conf.d/proxy.conf
-  notify: reiniciar nginx
