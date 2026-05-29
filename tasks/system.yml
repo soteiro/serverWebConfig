@@ -2,6 +2,7 @@
   dnf:
     name: "*"
     state: latest
+  ignore_errors: true
 
 - name: Crear el usuario {{ usuario_nombre }}
   user:
@@ -29,10 +30,12 @@
   stat:
     path: /swapfile
   register: swap_file_check
+  ignore_errors: true
 
 - name: Crear archivo SWAP de 2GB
   command: fallocate -l 2G /swapfile
   when: not swap_file_check.stat.exists
+  ignore_errors: true
 
 - name: Establecer permisos correctos al SWAP
   file:
@@ -41,20 +44,24 @@
     group: root
     mode: '0600'
   when: not swap_file_check.stat.exists
+  ignore_errors: true
 
 - name: Formatear el archivo como SWAP
   command: mkswap /swapfile
   when: not swap_file_check.stat.exists
+  ignore_errors: true
 
 - name: Activar el archivo SWAP
   command: swapon /swapfile
   when: not swap_file_check.stat.exists
+  ignore_errors: true
 
 - name: Asegurar que el SWAP sea permanente en /etc/fstab
   lineinfile:
     path: /etc/fstab
     line: '/swapfile swap swap defaults 0 0'
     state: present
+  ignore_errors: true
 
 - name: Ajustar swappiness (priorizar RAM)
   sysctl:
@@ -62,3 +69,5 @@
     value: '10'
     state: present
     reload: yes
+  ignore_errors: true
+  

@@ -80,9 +80,16 @@
     state: present
   loop:
     - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
-    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication yes' }
     - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
   notify: reiniciar ssh
+  ignore_errors: true
 
 - name: Aplicar cambios de seguridad inmediatamente
   meta: flush_handlers
+
+- name: Permitir que Nginx realice conexiones de red (Reverse Proxy SELinux)
+  seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes

@@ -1,0 +1,29 @@
+- name: Asegurar que el directorio .ssh de {{ usuario_nombre }} existe
+  file:
+    path: "/home/{{ usuario_nombre }}/.ssh"
+    state: directory
+    owner: "{{ usuario_nombre }}"
+    group: "{{ usuario_nombre }}"
+    mode: '0700'
+
+- name: Copiar la llave privada de despliegue al servidor
+  copy:
+    src: files/deploy_key
+    dest: "/home/{{ usuario_nombre }}/.ssh/id_ed25519_github"
+    owner: "{{ usuario_nombre }}"
+    group: "{{ usuario_nombre }}"
+    mode: '0600'
+
+- name: Configurar SSH para usar la llave de despliegue con GitHub
+  blockinfile:
+    path: "/home/{{ usuario_nombre }}/.ssh/config"
+    create: yes
+    owner: "{{ usuario_nombre }}"
+    group: "{{ usuario_nombre }}"
+    mode: '0600'
+    block: |
+      Host github.com
+        HostName github.com
+        User git
+        IdentityFile ~/.ssh/id_ed25519_github
+        StrictHostKeyChecking no

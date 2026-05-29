@@ -4,6 +4,7 @@
   become: yes
   vars:
     usuario_nombre: dsoto
+    app_dir: /opt/mailsender
 
   tasks:
     - name: Fase 1 - Preparación del Sistema y SWAP
@@ -17,6 +18,17 @@
 
     - name: Fase 4 - Servidor Web
       include_tasks: tasks/web.yml
+
+    - name: Fase 5 - Configurar Acceso a GitHub (Deploy Key)
+      include_tasks: tasks/deploy_setup.yml
+
+    - name: Fase 6 - Crear directorio base para aplicaciones
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ usuario_nombre }}"
+        group: "{{ usuario_nombre }}"
+        mode: '0755'
 
     - name: Asegurar que todos los servicios estén iniciados
       service:
